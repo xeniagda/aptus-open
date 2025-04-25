@@ -80,20 +80,27 @@ class DoorControl:
             await self.relogin()
 
     async def relogin(self):
-        self.log.info(f"Getting credentials")
+        self.log.info(f"Getting new credentials")
 
         # create a new session
-        async with aiohttp.ClientSession() as login_sess:
-            self.log.debug(f"Started login session")
-            await login_csb(login_sess, self.secrets)
-            self.log.debug(f"Got CSB credentials")
-            await login_aptus(login_sess)
-            self.log.debug(f"Got aptus credentials")
+        login_sess = aiohttp.ClientSession()
+        await login_sess.__aenter__()
 
-            login_sess.cookie_jar.save("/tmp/csb-cookies")
-            async with self.lock:
-                self.sess.cookie_jar.load("/tmp/csb-cookies")
-                self.log.info(f"Got credentials")
+        self.log.debug(f"Started login session")
+        await login_csb(login_sess, self.secrets)
+        self.log.debug(f"Got CSB credentials")
+        await login_aptus(login_sess)
+        self.log.debug(f"Got aptus credentials")
+
+        # swap them out
+        async with self.lock:
+            old_sess = self.sess
+            self.sess = login_sess
+
+        # cleanup old_sess
+        await old_sess.__aexit__(None, None, None)
+        self.log.info(f"Got new credentials")
+
 
     async def unlock_door(self, door: Door):
         self.log.info(f"Unlocking door {door}")
