@@ -1,0 +1,5 @@
+.direnv
+**/__pycache__
+mitmproxy-flows
+result
+secrets.toml
