@@ -9,7 +9,7 @@ log = logging.getLogger("web")
 def routes(dc: DoorControl):
     routes = web.RouteTableDef()
 
-    @routes.get("/unlock-door/{door_id}")
+    @routes.post("/unlock-door/{door_id}")
     async def unlock_door(req: web.Request):
         door_id = req.match_info["door_id"]
         matching_doors = [door for door in dc.secrets.doors if door.name == door_id]
